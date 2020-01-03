@@ -8,6 +8,7 @@ package Regexp::Pattern::Path;
 use 5.010001;
 use strict;
 use warnings;
+#use utf8;
 
 our %RE;
 
@@ -133,6 +134,81 @@ _
         {str=>'_$!%-@\'^.~#&', matches=>1},
         {str=>'{}`().', matches=>1},
         {str=>'FILE[1].TXT', matches=>0, summary=>'Contains invalid character [ and ]'},
+    ],
+};
+
+$RE{filename_windows} = {
+    summary => 'Valid filename on Windows (long filenames)',
+    description => <<'_',
+
+The following rules are used in this pattern:
+
+1. Contains 1-260 characters (including extension).
+
+2. Does not contain the characters \0, [\x01-\x1f], <, >, :, ", /, \, |, ?, *.
+
+3. The name cannot be one of the following reserved file names: CON, PRN, AUX,
+NUL, COM1, COM2, COM3, COM4, COM5, COM6, COM7, COM8, COM9, LPT1, LPT2, LPT3,
+LPT4, LPT5, LPT6, LPT7, LPT8, and LPT9.
+
+4. Does not end with a period.
+
+5. Does not begin with a period.
+
+5. Cannot be '.' or '..'.
+
+References:
+- <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file>
+
+_
+    pat => qr(\A(?:
+
+                  # does not contain invalid characters
+                  (?!.*[\x00-\x1f<>:"/\\|?*])
+
+                  # is not one of reserved filenames
+                  (?!(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])\z)
+
+                  # is not . or ..
+                  (?!\.\.?\z)
+
+                  # does not begin with .
+                  (?!\.)
+
+                  # does not end with .
+                  (?!.*\.\z)
+
+                  # 3. must be between 1-260 characters
+                  .{1,260}
+
+              )\z)x,
+    tags => ['anchored'],
+    examples => [
+        {str=>'', matches=>0, summary=>'Empty'},
+        {str=>'FOO', matches=>1},
+        {str=>'foo', matches=>1},
+        {str=>'FOOBARBA.TXT', matches=>1},
+        {str=>'.FOO.TXT', matches=>0, summary=>'Starts with period'},
+        {str=>'bar.', matches=>0, summary=>'Ends with period'},
+        {str=>'CON', matches=>0, summary=>'reserved name CON'},
+        {str=>'LPT3', matches=>0, summary=>'reserved name LPT3'},
+        {str=>'CONAUX', matches=>1},
+        #{str=>' FOO.BAR', matches=>0, summary=>'Starts with space'},
+        {str=>'FOO .BAR', matches=>1},
+        {str=>'foo[1].txt', matches=>1},
+        {str=>'foo(2).txt', matches=>1},
+        {str=>"foo\0", matches=>0, summary=>'Contains invalid character \0'},
+        {str=>"foo\b", matches=>0, summary=>'Contains control character'},
+        {str=>"foo/bar", matches=>0, summary=>'Contains invalid character /'},
+        {str=>"foo<bar>", matches=>0, summary=>'Contains invalid characters <>'},
+        {str=>"foo:bar", matches=>0, summary=>'Contains invalid character :'},
+        {str=>"foo's file", matches=>1},
+        {str=>'foo "bar"', matches=>0, summary=>'Contains invalid character "'},
+        {str=>'foo\\bar', matches=>0, summary=>'Contains invalid character \\'},
+        {str=>'foo|bar', matches=>0, summary=>'Contains invalid character |'},
+        {str=>'foo?', matches=>0, summary=>'Contains invalid character ?'},
+        {str=>'foo*', matches=>0, summary=>'Contains invalid character *'},
+        {str=>'a' x 261, matches=>0, summary=>'Too long'},
     ],
 };
 
