@@ -51,8 +51,8 @@ $RE{dirname_unix} = {
     summary => 'Valid directory name on Unix',
     description => <<'_',
 
-Just like `filename_unix` but allows '.' and '..' (strictly speaking they are
-special pseudonames to refer to current and parent directory).
+Just like `filename_unix` but allows '.' and '..' (although strictly speaking
+'.' and '..' are just special directory names instead of regular ones).
 
 _
     pat => qr(\A(?:
@@ -77,6 +77,62 @@ _
         {str=>'.', matches=>1},
         {str=>'..', matches=>1},
         {str=>'...', matches=>1},
+    ],
+};
+
+$RE{filename_dos} = {
+    summary => 'Valid filename on DOS (8.3/short filenames)',
+    description => <<'_',
+
+The following rules are used in this pattern:
+
+1. Contains 1-8 characters, optionally followed by a period and 0-3 characters
+(extension).
+
+2. Valid characters include letters A-Z (a-z is also allowed in this regex),
+numbers 0-9, and the following special characters:
+
+    _ underscore            ^  caret
+    $ dollar sign           ~  tilde
+    ! exclamation point     #  number sign
+    % percent sign          &  ampersand
+    - hyphen                {} braces
+    @ at sign               `  single quote
+    ' apostrophe            () parentheses
+
+3. The name cannot be one of the following reserved file names: CLOCK$, CON,
+AUX, COM1, COM2, COM3, COM4, LPT1, LPT2, LPT3, LPT4, NUL, and PRN.
+
+_
+    pat => qr(\A(?:
+
+                  # 2. does not contain invalid characters
+                  (?!.*[^A-Za-z0-9_\$!\%\-\@'^~#&{}`().])
+
+                  # 3. is not one of reserved filenames
+                  (?!(?:CLOCK\$|CON|AUX|COM1|COM2|COM3|COM4|LPT1|LPT2|LPT3|LPT4|NUL|PRN)\z)
+
+                  # 3. must be between 1-8 characters optionally followed by 0-3 characters of extension
+                  [^.]{1,8} (?:\.[^.]{0,3})?
+
+              )\z)x,
+    tags => ['anchored'],
+    examples => [
+        {str=>'FOO', matches=>1},
+        {str=>'foo', matches=>1, summary=>'Lowercase letters not allowed (convert your string to uppercase first if you want to accept lowercase letters)'},
+        {str=>'FOOBARBA.TXT', matches=>1},
+        {str=>'.FOO.TXT', matches=>0, summary=>'Contains period other than as filename-extension separator'},
+        {str=>'.TXT', matches=>0, summary=>'Does not contain filename'},
+        {str=>'', matches=>0, summary=>'Empty'},
+        {str=>'FOOBARBAZ', matches=>0, summary=>'Name too long'},
+        {str=>'FOOBARBA.TEXT', matches=>0, summary=>'Extension too long'},
+        {str=>'CON', matches=>0, summary=>'reserved name CON'},
+        {str=>'CONAUX', matches=>1},
+        {str=>' FOO.BAR', matches=>0, summary=>'Starts with space'},
+        {str=>'FOO .BAR', matches=>0, summary=>'Contains space'},
+        {str=>'_$!%-@\'^.~#&', matches=>1},
+        {str=>'{}`().', matches=>1},
+        {str=>'FILE[1].TXT', matches=>0, summary=>'Contains invalid character [ and ]'},
     ],
 };
 
