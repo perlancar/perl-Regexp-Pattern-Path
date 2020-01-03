@@ -97,7 +97,7 @@ numbers 0-9, and the following special characters:
     $ dollar sign           ~  tilde
     ! exclamation point     #  number sign
     % percent sign          &  ampersand
-    - hyphen                {} braces
+      hyphen (-)            {} braces
     @ at sign               `  single quote
     ' apostrophe            () parentheses
 

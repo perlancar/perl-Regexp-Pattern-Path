@@ -1,3 +1,8 @@
+0.003   2020-01-03  Released-By: PERLANCAR; Urgency: medium
+
+	- Add patterns: filename_dos, filename_windows.
+
+
 0.002   2020-01-03  Released-By: PERLANCAR; Urgency: medium
 
 	- [pattern filename_unix] Disallow '.' and '..'.
